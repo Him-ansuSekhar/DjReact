@@ -1,0 +1,330 @@
+>>>>>>> DjReact <<<<<<
+
+>  Create 2 folders:
+1. backend  : for django and djangorestframework
+2. frontend : for react app
+
+>  Create app: 
+   python manage.py startapp <appnanme>(articles)
+   
+   
+   
+>  Add 'rest_framework', 'articles' to the 
+   INSTALLED_APPS in the settings.py file. 
+   
+   And also this: 
+	   REST_FRAMEWORK = {
+		# Use Django's standard `django.contrib.auth` permissions,
+		# or allow read-only access for unauthenticated users.
+		'DEFAULT_PERMISSION_CLASSES': [
+			'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+		]
+	}
+
+>  Add path('api-auth/', include('rest_framework.urls')), 
+   to urls.py
+   
+   Make changes in the import path: from django.urls import path, include
+   
+
+>  Check if everything is working fine or not. 
+   Run the django server. 
+  
+  
+..........................................................................
+
+
+>  Goto articles/models.py: 
+
+.. Add the following lines: 
+
+from django.db import models
+
+# Create your models here.
+
+class Article(models.Model):
+    title = models.CharField(max_length=120)
+    content = models.TextField()
+
+    def __str__(self): 
+        return self.title
+		
+		
+		
+>  python manage.py makemigrations
+>  python manage.py migrate
+
+
+
+
+>  Goto articles/admin.py: 
+from django.contrib import admin
+
+# Register your models here.
+
+from .models import Article
+
+admin.site.register(Article)
+
+
+>  python manage.py createsuperuser
+.. username: <...>
+.. password: <...>
+
+>  Check for Articles in localhost:8000/admin 
+
+
+>  REST framework is to be used as the default API. 
+>  Use of serializers: converts json data to models
+        
+.......................................................................
+
+>  Create folder api in articles
+>  Create __init__.py in articles
+
+>  Create serializers.py in articles: 
+from rest_framework import serializers
+from articles.models import Article
+
+class ArticleSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model=Article
+        fields = ('title', 'content')
+
+
+>  Create views.py in articles: 
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from articles.models import Article
+from .serializers import ArticleSerializer
+
+class ArticleListView(ListAPIView):
+    queryset=Article.objects.all()
+    serializer_class=ArticleSerializer
+
+
+class ArticleDetailView(RetrieveAPIView): 
+    queryset=Article.objects.all()
+    serializer_class=ArticleSerializer
+
+
+>  Create urls.py in articles: 
+from django.urls import path
+from .views import ArticleListView, ArticleDetailView
+
+urlpatterns=[
+    path('', ArticleListView.as_view()), 
+    path('<pk>', ArticleDetailView.as_view()) 
+
+]
+
+
+>  Goto djreact/urls.py and make the following changes: 
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('api-auth/', include('rest_framework.urls')),
+    path('admin/', admin.site.urls),
+    path('api/', include('articles.api.urls')),
+]
+
+
+>  Check if the api is working or not: http://localhost:8080/api/
+
+...........................................................................
+
+
+>>>>>> FRONT END <<<<<<<
+
+.. Installing ANT Design for UI : npm install antd --save
+
+>  In the App.js file, add: 
+import 'antd/dist/antd.css';
+
+>  Create containers and components folders in the src folder. 
+
+
+>  Create Layout.js file in the containers folder: 
+import { Layout, Menu, Breadcrumb } from 'antd';
+import React from 'react'; 
+
+const { Header, Content, Footer } = Layout;
+
+const CustomLayout = (props) =>{
+
+    return (
+        <Layout className="layout">
+            <Header>
+            <div className="logo" />
+            <Menu
+                theme="dark"
+                mode="horizontal"
+                defaultSelectedKeys={['2']}
+                style={{ lineHeight: '64px' }}
+            >
+                <Menu.Item key="1">nav 1</Menu.Item>
+                <Menu.Item key="2">nav 2</Menu.Item>
+                <Menu.Item key="3">nav 3</Menu.Item>
+            </Menu>
+            </Header>
+            <Content style={{ padding: '0 50px' }}>
+            <Breadcrumb style={{ margin: '16px 0' }}>
+                <Breadcrumb.Item>Home</Breadcrumb.Item>
+                <Breadcrumb.Item>List</Breadcrumb.Item>
+                <Breadcrumb.Item>App</Breadcrumb.Item>
+            </Breadcrumb>
+                <div style={{ background: '#fff', padding: 24, minHeight: 280 }}>
+                    {props.children}
+                </div>
+            </Content>
+            <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
+        </Layout>        
+
+    ); 
+}
+
+export default CustomLayout; 
+
+
+
+>  Create Article.js in components: 
+import React from 'react'; 
+import { List, Avatar, Icon } from 'antd';
+
+const listData = [];
+for (let i = 0; i < 23; i++) {
+  listData.push({
+    href: 'http://ant.design',
+    title: `ant design part ${i}`,
+    avatar: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png',
+    description:
+      'Ant Design, a design language for background applications, is refined by Ant UED Team.',
+    content:
+      'We supply a series of design principles, practical patterns and high quality design resources (Sketch and Axure), to help people create their product prototypes beautifully and efficiently.',
+  });
+}
+
+const IconText = ({ type, text }) => (
+  <span>
+    <Icon type={type} style={{ marginRight: 8 }} />
+    {text}
+  </span>
+);
+
+const Article=(props)=>{
+    return (
+          <List
+            itemLayout="vertical"
+            size="large"
+            pagination={{
+              onChange: page => {
+                console.log(page);
+              },
+              pageSize: 3,
+            }}
+            dataSource={listData}
+            footer={
+              <div>
+                <b>ant design</b> footer part
+              </div>
+            }
+            renderItem={item => (
+              <List.Item
+                key={item.title}
+                actions={[
+                  <IconText type="star-o" text="156" key="list-vertical-star-o" />,
+                  <IconText type="like-o" text="156" key="list-vertical-like-o" />,
+                  <IconText type="message" text="2" key="list-vertical-message" />,
+                ]}
+                extra={
+                  <img
+                    width={272}
+                    alt="logo"
+                    src="https://gw.alipayobjects.com/zos/rmsportal/mqaQswcyDLcXyDKnZfES.png"
+                  />
+                }
+              >
+                <List.Item.Meta
+                  avatar={<Avatar src={item.avatar} />}
+                  title={<a href={item.href}>{item.title}</a>}
+                  description={item.description}
+                />
+                {item.content}
+              </List.Item>
+            )}
+          />               
+    );
+}
+
+export default Article; 
+
+
+>  Create ArticleListView in containers: 
+import React from 'react'; 
+import Article from '../components/Article';
+
+class ArticleList extends React.Component{
+    render(){
+        return (
+            <Article />
+        ); 
+    }
+}
+
+export default ArticleList; 
+
+
+
+>  Make changes in the App.js: 
+import React from 'react';
+import './App.css';
+import 'antd/dist/antd.css';
+import CustomLayout from './containers/Layout';
+import ArticleList from './containers/ArticleListView';
+
+
+function App() {
+  return (
+    <div className="App">
+      <CustomLayout>
+        <ArticleList />
+      </CustomLayout>
+    </div>
+  );
+}
+
+export default App;
+
+
+
+>  Check if everything is working fine..
+
+
+............................................................................
+
+
+>  Axios is a promise-based HTTP client that works both in the browser and 
+   in a node.js environment. It basically provides a single API for 
+   dealing with XMLHttpRequest s and node's http interface. Besides that, 
+   it wraps the requests using a polyfill for ES6 new's promise syntax.
+
+>  npm install axios --save; Inside the front end
+
+>  django-cors-headers in the backend
+
+
+
+
+
+
+
+... Requirements: 
+1. Django REST Framework            : 
+2. Axios framework in the frontend  : HTTP client that works in both browser and 
+									  node.js environment. 
+									  
+3. django-cors-headers library in   : Allows resources to be accessed on other 
+   the backend					      domains. 
+  							
+  
+
